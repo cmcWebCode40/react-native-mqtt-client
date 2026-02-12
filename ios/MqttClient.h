@@ -1,5 +1,7 @@
 #import <MqttClientSpec/MqttClientSpec.h>
+#import <React/RCTEventEmitter.h>
+#import <MQTTClient/MQTTClient.h>
 
-@interface MqttClient : NSObject <NativeMqttClientSpec>
+@interface MqttClient : RCTEventEmitter <NativeMqttClientSpec, MQTTSessionDelegate>
 
 @end

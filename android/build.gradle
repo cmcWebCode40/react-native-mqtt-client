@@ -17,6 +17,7 @@ buildscript {
   repositories {
     google()
     mavenCentral()
+    maven { url "https://repo.eclipse.org/content/repositories/paho-releases/" }
   }
 
   dependencies {
@@ -31,6 +32,12 @@ apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
 
 apply plugin: "com.facebook.react"
+
+repositories {
+  google()
+  mavenCentral()
+  maven { url "https://repo.eclipse.org/content/repositories/paho-releases/" }
+}
 
 android {
   namespace "com.mqttclient"
@@ -64,4 +71,6 @@ android {
 
 dependencies {
   implementation "com.facebook.react:react-android"
+  implementation "org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5"
+  implementation "org.eclipse.paho:org.eclipse.paho.android.service:1.1.1"
 }
