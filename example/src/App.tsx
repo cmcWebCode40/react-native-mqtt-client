@@ -23,7 +23,9 @@ export default function App() {
 
   const addLog = useCallback((log: string) => {
     const timestamp = new Date().toLocaleTimeString();
-    setLogs((prev: string[]) => [`[${timestamp}] ${log}`, ...prev].slice(0, 50));
+    setLogs((prev: string[]) =>
+      [`[${timestamp}] ${log}`, ...prev].slice(0, 50)
+    );
   }, []);
 
   useEffect(() => {
@@ -71,6 +73,7 @@ export default function App() {
     try {
       addLog('Connecting...');
       await Mqtt.connect(BROKER_URL, '413100000001', 'M%3Hras#$^^&&**');
+      console.log('Connection initiated');
     } catch (error: any) {
       Alert.alert('Connection Error', error?.message ?? 'Unknown error');
     }
@@ -91,7 +94,9 @@ export default function App() {
     }
     try {
       await Mqtt.subscribe(topic.trim());
-      setSubscribedTopics((prev: string[]) => [...new Set([...prev, topic.trim()])]);
+      setSubscribedTopics((prev: string[]) => [
+        ...new Set([...prev, topic.trim()]),
+      ]);
     } catch (error: any) {
       Alert.alert('Subscribe Error', error?.message ?? 'Unknown error');
     }
@@ -104,7 +109,9 @@ export default function App() {
     }
     try {
       await Mqtt.unsubscribe(topic.trim());
-      setSubscribedTopics((prev: string[]) => prev.filter((t: string) => t !== topic.trim()));
+      setSubscribedTopics((prev: string[]) =>
+        prev.filter((t: string) => t !== topic.trim())
+      );
     } catch (error: any) {
       Alert.alert('Unsubscribe Error', error?.message ?? 'Unknown error');
     }
