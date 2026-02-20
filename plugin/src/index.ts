@@ -1,5 +1,5 @@
 import {
-  ConfigPlugin,
+  type ConfigPlugin,
   withAndroidManifest,
   withInfoPlist,
 } from '@expo/config-plugins';
@@ -47,7 +47,11 @@ const withMqttClient: ConfigPlugin = (config) => {
       iosConfig.modResults.NSAppTransportSecurity = {};
     }
     // Allow non-TLS connections if needed (tcp:// broker URLs)
-    iosConfig.modResults.NSAppTransportSecurity.NSAllowsArbitraryLoads = true;
+    const ats = iosConfig.modResults.NSAppTransportSecurity as Record<
+      string,
+      unknown
+    >;
+    ats.NSAllowsArbitraryLoads = true;
 
     return iosConfig;
   });

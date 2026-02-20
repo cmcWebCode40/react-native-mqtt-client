@@ -2,7 +2,12 @@
   "extends": "../../tsconfig",
   "compilerOptions": {
     "outDir": "../build",
-    "rootDir": "."
+    "rootDir": ".",
+    "noEmit": false,
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "verbatimModuleSyntax": false,
+    "declaration": true
   },
   "include": ["./**/*.ts"]
 }
