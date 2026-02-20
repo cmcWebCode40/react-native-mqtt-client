@@ -1,6 +1,6 @@
 {
   "name": "@ecodevstack/react-native-mqtt-client",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "A lightweight, high-performance MQTT client for React Native with native Android and iOS support. Supports MQTT 3.1.1, TLS/SSL, QoS 0/1/2, and Expo config plugin.",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
