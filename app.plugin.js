@@ -1,2 +1,1 @@
-const plugin = require('./plugin/build/index');
-module.exports = plugin.default || plugin;
+module.exports = require('./plugin/build');
