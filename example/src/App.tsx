@@ -11,13 +11,31 @@ import {
 } from 'react-native';
 import { Mqtt, type MqttMessage } from 'react-native-mqtt-client';
 
-const BROKER_URL = 'tcp://mqtt.interswitchng.com:1883';
+const DEFAULT_BROKER_URL = 'tcp://mqtt.interswitchng.com:1883';
+const DEFAULT_USERNAME = '413100000001';
+const DEFAULT_PASSWORD = 'M%3Hras#$^^&&**';
 const DEFAULT_TOPIC = 'react-native-mqtt-client/test';
+
+type MessageFormat = 'text' | 'json';
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(false);
+  const [brokerUrl, setBrokerUrl] = useState(DEFAULT_BROKER_URL);
+  const [username, setUsername] = useState(DEFAULT_USERNAME);
+  const [password, setPassword] = useState(DEFAULT_PASSWORD);
   const [topic, setTopic] = useState(DEFAULT_TOPIC);
-  const [message, setMessage] = useState('Hello from React Native!');
+  const [messageFormat, setMessageFormat] = useState<MessageFormat>('json');
+  const [message, setMessage] = useState(
+    JSON.stringify(
+      {
+        payload: 'Hello MQTT',
+        qos: 1,
+        retained: false,
+      },
+      null,
+      2
+    )
+  );
   const [logs, setLogs] = useState<string[]>([]);
   const [subscribedTopics, setSubscribedTopics] = useState<string[]>([]);
 
@@ -26,6 +44,10 @@ export default function App() {
     setLogs((prev: string[]) =>
       [`[${timestamp}] ${log}`, ...prev].slice(0, 50)
     );
+  }, []);
+
+  const clearLogs = useCallback(() => {
+    setLogs([]);
   }, []);
 
   useEffect(() => {
@@ -43,6 +65,7 @@ export default function App() {
     const messageSub = Mqtt.addListener(
       'onMqttMessageReceived',
       (data: MqttMessage) => {
+        console.log(`Message received on topic ${data}`);
         addLog(`📩 [${data.topic}]: ${data.message}`);
       }
     );
@@ -69,11 +92,28 @@ export default function App() {
     };
   }, [addLog]);
 
+  const requireConnection = useCallback(() => {
+    if (!isConnected) {
+      Alert.alert(
+        'Not Connected',
+        'You must be connected to a broker before performing this action.'
+      );
+      return false;
+    }
+    return true;
+  }, [isConnected]);
+
   const handleConnect = async () => {
+    if (!brokerUrl.trim()) {
+      Alert.alert('Error', 'Please enter a broker URL');
+      return;
+    }
     try {
-      addLog('Connecting...');
-      await Mqtt.connect(BROKER_URL, '413100000001', 'M%3Hras#$^^&&**');
-      console.log('Connection initiated');
+      addLog(`Connecting to ${brokerUrl.trim()}...`);
+      const res = await Mqtt.connect(brokerUrl.trim(), username, password);
+      console.log(res, 'res=======');
+      addLog(`✅ Connected: response: ${res}`);
+      setIsConnected(true);
     } catch (error: any) {
       Alert.alert('Connection Error', error?.message ?? 'Unknown error');
     }
@@ -88,6 +128,7 @@ export default function App() {
   };
 
   const handleSubscribe = async () => {
+    if (!requireConnection()) return;
     if (!topic.trim()) {
       Alert.alert('Error', 'Please enter a topic');
       return;
@@ -103,6 +144,7 @@ export default function App() {
   };
 
   const handleUnsubscribe = async () => {
+    if (!requireConnection()) return;
     if (!topic.trim()) {
       Alert.alert('Error', 'Please enter a topic');
       return;
@@ -118,16 +160,58 @@ export default function App() {
   };
 
   const handlePublish = async () => {
-    if (!topic.trim() || !message.trim()) {
+    if (!requireConnection()) return;
+    if (!topic.trim() || !message) {
       Alert.alert('Error', 'Please enter both topic and message');
       return;
     }
+
+    let payload = message;
+
+    if (messageFormat === 'json') {
+      try {
+        // Validate JSON by parsing it, then re-stringify compactly for publishing
+        const parsed = JSON.parse(message);
+        payload = JSON.stringify(parsed);
+      } catch {
+        Alert.alert(
+          'Invalid JSON',
+          'The message is not valid JSON. Please fix it or switch to Plain Text format.'
+        );
+        return;
+      }
+    }
+
     try {
-      await Mqtt.publish(topic.trim(), message.trim());
-      addLog(`📤 Published to [${topic.trim()}]: ${message.trim()}`);
+      await Mqtt.publish(topic.trim(), payload);
+      addLog(`📤 Published to [${topic.trim()}]: ${payload}`);
     } catch (error: any) {
       Alert.alert('Publish Error', error?.message ?? 'Unknown error');
     }
+  };
+
+  const handleFormatChange = (format: MessageFormat) => {
+    if (format === messageFormat) return;
+
+    if (format === 'json') {
+      // Switching to JSON — try to parse existing text as JSON for pretty-print
+      try {
+        const parsed = JSON.parse(message);
+        setMessage(JSON.stringify(parsed, null, 2));
+      } catch {
+        // Leave as-is, user will need to fix it
+      }
+    } else {
+      // Switching to plain text — compact JSON if valid, else leave as-is
+      try {
+        const parsed = JSON.parse(message);
+        setMessage(JSON.stringify(parsed));
+      } catch {
+        // Leave as-is
+      }
+    }
+
+    setMessageFormat(format);
   };
 
   return (
@@ -135,6 +219,7 @@ export default function App() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>🔗 MQTT Client</Text>
         <Text style={styles.subtitle}>
@@ -143,21 +228,65 @@ export default function App() {
             {isConnected ? 'Connected' : 'Disconnected'}
           </Text>
         </Text>
-
         {/* Connection Controls */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Connection</Text>
-          <Text style={styles.brokerLabel}>Broker: {BROKER_URL}</Text>
+
+          <Text style={styles.fieldLabel}>Broker URL</Text>
+          <TextInput
+            style={styles.input}
+            value={brokerUrl}
+            onChangeText={setBrokerUrl}
+            placeholder="tcp://broker.example.com:1883"
+            placeholderTextColor="#999"
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!isConnected}
+          />
+
+          <Text style={styles.fieldLabel}>Username</Text>
+          <TextInput
+            style={styles.input}
+            value={username}
+            onChangeText={setUsername}
+            placeholder="Username (optional)"
+            placeholderTextColor="#999"
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!isConnected}
+          />
+
+          <Text style={styles.fieldLabel}>Password</Text>
+          <TextInput
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password (optional)"
+            placeholderTextColor="#999"
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!isConnected}
+          />
+
           <View style={styles.row}>
             <TouchableOpacity
-              style={[styles.button, styles.connectBtn]}
+              style={[
+                styles.button,
+                styles.connectBtn,
+                isConnected && styles.buttonDisabled,
+              ]}
               onPress={handleConnect}
               disabled={isConnected}
             >
               <Text style={styles.buttonText}>Connect</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, styles.disconnectBtn]}
+              style={[
+                styles.button,
+                styles.disconnectBtn,
+                !isConnected && styles.buttonDisabled,
+              ]}
               onPress={handleDisconnect}
               disabled={!isConnected}
             >
@@ -178,14 +307,22 @@ export default function App() {
           />
           <View style={styles.row}>
             <TouchableOpacity
-              style={[styles.button, styles.subscribeBtn]}
+              style={[
+                styles.button,
+                styles.subscribeBtn,
+                !isConnected && styles.buttonDisabled,
+              ]}
               onPress={handleSubscribe}
               disabled={!isConnected}
             >
               <Text style={styles.buttonText}>Subscribe</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, styles.unsubscribeBtn]}
+              style={[
+                styles.button,
+                styles.unsubscribeBtn,
+                !isConnected && styles.buttonDisabled,
+              ]}
               onPress={handleUnsubscribe}
               disabled={!isConnected}
             >
@@ -202,15 +339,62 @@ export default function App() {
         {/* Publish */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Publish</Text>
+
+          {/* Format Toggle */}
+          <View style={styles.formatToggleContainer}>
+            <Text style={styles.formatLabel}>Format:</Text>
+            <View style={styles.formatToggle}>
+              <TouchableOpacity
+                style={[
+                  styles.formatOption,
+                  messageFormat === 'text' && styles.formatOptionActive,
+                ]}
+                onPress={() => handleFormatChange('text')}
+              >
+                <Text
+                  style={[
+                    styles.formatOptionText,
+                    messageFormat === 'text' && styles.formatOptionTextActive,
+                  ]}
+                >
+                  Plain Text
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.formatOption,
+                  messageFormat === 'json' && styles.formatOptionActive,
+                ]}
+                onPress={() => handleFormatChange('json')}
+              >
+                <Text
+                  style={[
+                    styles.formatOptionText,
+                    messageFormat === 'json' && styles.formatOptionTextActive,
+                  ]}
+                >
+                  JSON
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <TextInput
-            style={styles.input}
+            style={[styles.input, styles.multilineInput]}
             value={message}
-            onChangeText={setMessage}
-            placeholder="Enter message"
+            onChangeText={(text) => setMessage(text)}
+            placeholder={
+              messageFormat === 'json' ? '{"key": "value"}' : 'Enter message...'
+            }
             placeholderTextColor="#999"
+            multiline
           />
           <TouchableOpacity
-            style={[styles.button, styles.publishBtn]}
+            style={[
+              styles.button,
+              styles.publishBtn,
+              !isConnected && styles.buttonDisabled,
+            ]}
             onPress={handlePublish}
             disabled={!isConnected}
           >
@@ -220,19 +404,32 @@ export default function App() {
 
         {/* Logs */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Logs</Text>
-          <View style={styles.logContainer}>
-            {logs.length === 0 ? (
-              <Text style={styles.logPlaceholder}>
-                No logs yet. Connect to get started.
-              </Text>
-            ) : (
-              logs.map((log: string, index: number) => (
-                <Text key={index} style={styles.logText}>
-                  {log}
-                </Text>
-              ))
+          <View style={styles.logHeader}>
+            <Text style={styles.sectionTitle}>Logs</Text>
+            {logs.length > 0 && (
+              <TouchableOpacity onPress={clearLogs} style={styles.clearBtn}>
+                <Text style={styles.clearBtnText}>Clear</Text>
+              </TouchableOpacity>
             )}
+          </View>
+          <View style={styles.logContainer}>
+            <ScrollView
+              nestedScrollEnabled
+              style={styles.logScroll}
+              contentContainerStyle={styles.logScrollContent}
+            >
+              {logs.length === 0 ? (
+                <Text style={styles.logPlaceholder}>
+                  No logs yet. Connect to get started.
+                </Text>
+              ) : (
+                logs.map((log: string, index: number) => (
+                  <Text key={index} style={styles.logText}>
+                    {log}
+                  </Text>
+                ))
+              )}
+            </ScrollView>
           </View>
         </View>
       </ScrollView>
@@ -294,6 +491,12 @@ const styles = StyleSheet.create({
     color: '#888',
     marginBottom: 10,
   },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#555',
+    marginBottom: 4,
+  },
   row: {
     flexDirection: 'row',
     gap: 10,
@@ -325,6 +528,9 @@ const styles = StyleSheet.create({
   publishBtn: {
     backgroundColor: '#9C27B0',
   },
+  buttonDisabled: {
+    opacity: 0.4,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
@@ -334,6 +540,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: '#fafafa',
     color: '#333',
+  },
+  multilineInput: {
+    minHeight: 100,
+    maxHeight: 200,
+    fontFamily: 'monospace',
+    fontSize: 13,
   },
   subscribedLabel: {
     fontSize: 12,
@@ -345,8 +557,62 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e1e1e',
     borderRadius: 8,
     padding: 12,
-    minHeight: 150,
-    maxHeight: 300,
+    height: 250,
+  },
+  logScroll: {
+    flex: 1,
+  },
+  logScrollContent: {
+    flexGrow: 1,
+  },
+  logHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  clearBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#eee',
+  },
+  clearBtnText: {
+    fontSize: 13,
+    color: '#F44336',
+    fontWeight: '500',
+  },
+  formatToggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  formatLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginRight: 10,
+  },
+  formatToggle: {
+    flexDirection: 'row',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    overflow: 'hidden',
+  },
+  formatOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    backgroundColor: '#fafafa',
+  },
+  formatOptionActive: {
+    backgroundColor: '#9C27B0',
+  },
+  formatOptionText: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '500',
+  },
+  formatOptionTextActive: {
+    color: '#fff',
   },
   logText: {
     color: '#d4d4d4',

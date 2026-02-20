@@ -1,8 +1,4 @@
-import {
-  NativeEventEmitter,
-  NativeModules,
-  Platform,
-} from 'react-native';
+import { NativeEventEmitter, NativeModules, Platform } from 'react-native';
 import MqttClient from './NativeMqttClient';
 
 const MqttEventEmitter = new NativeEventEmitter(
