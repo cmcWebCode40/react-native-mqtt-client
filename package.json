@@ -36,7 +36,7 @@
   "scripts": {
     "example": "yarn workspace react-native-mqtt-client-example",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
-    "prepare": "bob build",
+    "prepare": "bob build && tsc --project plugin/src/tsconfig.json",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "test": "jest",

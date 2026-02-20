@@ -9,9 +9,10 @@
 .vscode/
 jsconfig.json
 
-# Xcode
+# Xcode build output
 #
-build/
+ios/build/
+example/ios/build/
 *.pbxuser
 !default.pbxuser
 *.mode1v3
@@ -40,6 +41,9 @@ project.xcworkspace
 .settings
 local.properties
 android.iml
+android/build/
+example/android/build/
+example/android/app/build/
 
 # Cocoapods
 #
