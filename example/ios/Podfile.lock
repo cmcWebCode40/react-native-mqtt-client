@@ -2457,7 +2457,7 @@ PODS:
     - React-perflogger (= 0.83.0)
     - React-utils (= 0.83.0)
     - SocketRocket
-  - RNMqttClient (0.1.0):
+  - RNMqttClient (0.2.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -2813,7 +2813,7 @@ SPEC CHECKSUMS:
   ReactAppDependencyProvider: 23e2bca1661f8781e55fcc05a151fc1df97bc1fb
   ReactCodegen: 10a61330b137caaad6f7fbe7f5d0e7a40d621700
   ReactCommon: c6cd81778336e767e27fe63c6707dd6b735fff5c
-  RNMqttClient: b257a34d81e8f23245abf5188dce62ab3fc21953
+  RNMqttClient: 338a7f725c5e09230d5028c818ec8d13e0fce27b
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 7a9f26c70daf0b08d82ec2f862e9a8872442129e
 
