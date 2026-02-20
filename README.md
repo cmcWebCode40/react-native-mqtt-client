@@ -1,4 +1,4 @@
-# react-native-mqtt-client
+# @ecodevstack/react-native-mqtt-client
 
 A native MQTT client for React Native (Android & iOS) built with the **New Architecture** (Turbo Modules + Codegen). Connect, publish, subscribe, and receive real-time messages from any MQTT broker.
 
@@ -22,9 +22,9 @@ A native MQTT client for React Native (Android & iOS) built with the **New Archi
 ## Installation
 
 ```sh
-npm install react-native-mqtt-client
+npm install @ecodevstack/react-native-mqtt-client
 # or
-yarn add react-native-mqtt-client
+yarn add @ecodevstack/react-native-mqtt-client
 ```
 
 ### iOS
@@ -40,7 +40,7 @@ Add the plugin to your `app.json` or `app.config.js`:
 ```json
 {
   "expo": {
-    "plugins": ["react-native-mqtt-client"]
+    "plugins": ["@ecodevstack/react-native-mqtt-client"]
   }
 }
 ```
@@ -54,7 +54,7 @@ npx expo prebuild
 ## Quick Start
 
 ```ts
-import { Mqtt } from 'react-native-mqtt-client';
+import { Mqtt } from '@ecodevstack/react-native-mqtt-client';
 
 // 1. Listen for incoming messages
 const sub = Mqtt.addListener('onMqttMessageReceived', (data) => {
@@ -80,9 +80,9 @@ await Mqtt.disconnect();
 ### Import
 
 ```ts
-import { Mqtt } from 'react-native-mqtt-client';
+import { Mqtt } from '@ecodevstack/react-native-mqtt-client';
 // Optional: import types
-import type { MqttEvent, MqttMessage } from 'react-native-mqtt-client';
+import type { MqttEvent, MqttMessage } from '@ecodevstack/react-native-mqtt-client';
 ```
 
 ### Connect to a Broker
@@ -141,8 +141,8 @@ Register listeners to react to connection changes, incoming messages, and errors
 
 ```tsx
 import { useEffect } from 'react';
-import { Mqtt } from 'react-native-mqtt-client';
-import type { MqttMessage } from 'react-native-mqtt-client';
+import { Mqtt } from '@ecodevstack/react-native-mqtt-client';
+import type { MqttMessage } from '@ecodevstack/react-native-mqtt-client';
 
 useEffect(() => {
   const connSub = Mqtt.addListener('onMqttConnected', (data) => {
@@ -284,7 +284,7 @@ A complete React Native screen with connect/disconnect, subscribe/unsubscribe, p
 ```tsx
 import { useState, useEffect, useCallback } from 'react';
 import { Text, View, Button, Alert, SafeAreaView, ScrollView } from 'react-native';
-import { Mqtt, type MqttMessage } from 'react-native-mqtt-client';
+import { Mqtt, type MqttMessage } from '@ecodevstack/react-native-mqtt-client';
 
 export default function MqttDemo() {
   const [isConnected, setIsConnected] = useState(false);
