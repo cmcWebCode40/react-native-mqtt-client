@@ -59,4 +59,4 @@ const withMqttClient: ConfigPlugin = (config) => {
   return config;
 };
 
-export default withMqttClient;
+module.exports = withMqttClient;
