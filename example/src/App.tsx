@@ -11,10 +11,10 @@ import {
 } from 'react-native';
 import { Mqtt, type MqttMessage } from 'react-native-mqtt-client';
 
-const DEFAULT_BROKER_URL = 'tcp://mqtt.interswitchng.com:1883';
-const DEFAULT_USERNAME = '413100000001';
-const DEFAULT_PASSWORD = 'M%3Hras#$^^&&**';
-const DEFAULT_TOPIC = 'react-native-mqtt-client/test';
+const DEFAULT_BROKER_URL = '';
+const DEFAULT_USERNAME = '';
+const DEFAULT_PASSWORD = '';
+const DEFAULT_TOPIC = '';
 
 type MessageFormat = 'text' | 'json';
 
