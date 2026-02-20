@@ -1,17 +1,23 @@
 # react-native-mqtt-client
 
-A native MQTT client for React Native (Android & iOS) built with the **New Architecture** (Turbo Modules + Codegen). Supports MQTT connection, disconnection, publish, subscribe, unsubscribe, and real-time message events.
+A native MQTT client for React Native (Android & iOS) built with the **New Architecture** (Turbo Modules + Codegen). Connect, publish, subscribe, and receive real-time messages from any MQTT broker.
 
 ## Features
 
-- 🔗 **Connect / Disconnect** to any MQTT broker (TCP, SSL, WS, WSS)
-- 📤 **Publish** messages to topics with configurable QoS
+- 🔗 **Connect / Disconnect** — TCP, SSL/TLS, WebSocket, and Secure WebSocket
+- 📤 **Publish** messages with configurable QoS (0, 1, 2)
 - 📥 **Subscribe / Unsubscribe** to topics
-- 📩 **Real-time message events** via native event emitter
-- ⚡ **New Architecture** — Turbo Module with Codegen
+- 📩 **Real-time events** — receive messages, connection status changes, and errors via listeners
+- ⚡ **New Architecture** — Turbo Module with Codegen (React Native 0.76+)
 - 📱 **Expo** compatible via config plugin
 - 🤖 **Android** — Eclipse Paho MQTT
-- 🍎 **iOS** — MQTTClient (MQTT-Client-Framework)
+- 🍎 **iOS** — MQTT-Client-Framework
+
+## Requirements
+
+- React Native **0.76+** (New Architecture / Turbo Modules)
+- iOS **13.0+**
+- Android **minSdkVersion 21+**
 
 ## Installation
 
@@ -29,7 +35,7 @@ cd ios && pod install
 
 ### Expo
 
-If you're using Expo, add the plugin to your `app.json` or `app.config.js`:
+Add the plugin to your `app.json` or `app.config.js`:
 
 ```json
 {
@@ -39,10 +45,34 @@ If you're using Expo, add the plugin to your `app.json` or `app.config.js`:
 }
 ```
 
-Then rebuild with:
+Then rebuild:
 
 ```sh
 npx expo prebuild
+```
+
+## Quick Start
+
+```ts
+import { Mqtt } from 'react-native-mqtt-client';
+
+// 1. Listen for incoming messages
+const sub = Mqtt.addListener('onMqttMessageReceived', (data) => {
+  console.log(`[${data.topic}]: ${data.message}`);
+});
+
+// 2. Connect to a broker
+await Mqtt.connect('tcp://broker.hivemq.com:1883', '', '');
+
+// 3. Subscribe to a topic
+await Mqtt.subscribe('my/topic');
+
+// 4. Publish a message
+await Mqtt.publish('my/topic', 'Hello MQTT!');
+
+// 5. Clean up when done
+sub.remove();
+await Mqtt.disconnect();
 ```
 
 ## Usage
@@ -51,13 +81,15 @@ npx expo prebuild
 
 ```ts
 import { Mqtt } from 'react-native-mqtt-client';
+// Optional: import types
+import type { MqttEvent, MqttMessage } from 'react-native-mqtt-client';
 ```
 
 ### Connect to a Broker
 
 ```ts
 try {
-  await Mqtt.connect('tcp://broker.hivemq.com:1883', '', '');
+  await Mqtt.connect('tcp://broker.hivemq.com:1883', 'myUser', 'myPass');
   console.log('Connected!');
 } catch (error) {
   console.error('Connection failed:', error);
@@ -65,93 +97,85 @@ try {
 ```
 
 **Supported URL schemes:**
-- `tcp://host:port` — Plain MQTT
-- `ssl://host:port` — MQTT over TLS
-- `ws://host:port` — MQTT over WebSocket
-- `wss://host:port` — MQTT over Secure WebSocket
+
+| Scheme | Description | Default Port |
+| --- | --- | --- |
+| `tcp://` | Plain MQTT | 1883 |
+| `ssl://` | MQTT over TLS | 8883 |
+| `ws://` | MQTT over WebSocket | 80 |
+| `wss://` | MQTT over Secure WebSocket | 443 |
+
+> Pass empty strings (`''`) for `username` and `password` to connect anonymously.
 
 ### Subscribe to a Topic
 
 ```ts
-try {
-  await Mqtt.subscribe('my/topic', 1); // QoS 0, 1, or 2
-  console.log('Subscribed!');
-} catch (error) {
-  console.error('Subscribe failed:', error);
-}
+await Mqtt.subscribe('sensors/temperature', 1); // QoS 0, 1, or 2
 ```
 
 ### Publish a Message
 
 ```ts
-try {
-  await Mqtt.publish('my/topic', 'Hello World!', 1); // QoS 0, 1, or 2
-  console.log('Published!');
-} catch (error) {
-  console.error('Publish failed:', error);
-}
+// Plain text
+await Mqtt.publish('sensors/temperature', '22.5', 1);
+
+// JSON payload
+await Mqtt.publish('devices/status', JSON.stringify({ online: true }), 1);
 ```
 
 ### Unsubscribe from a Topic
 
 ```ts
-try {
-  await Mqtt.unsubscribe('my/topic');
-  console.log('Unsubscribed!');
-} catch (error) {
-  console.error('Unsubscribe failed:', error);
-}
+await Mqtt.unsubscribe('sensors/temperature');
 ```
 
 ### Disconnect
 
 ```ts
-try {
-  await Mqtt.disconnect();
-  console.log('Disconnected!');
-} catch (error) {
-  console.error('Disconnect failed:', error);
-}
+await Mqtt.disconnect();
 ```
 
 ### Listen for Events
 
-```ts
+Register listeners to react to connection changes, incoming messages, and errors. Always clean up listeners when your component unmounts.
+
+```tsx
 import { useEffect } from 'react';
 import { Mqtt } from 'react-native-mqtt-client';
+import type { MqttMessage } from 'react-native-mqtt-client';
 
 useEffect(() => {
-  const connectedSub = Mqtt.addListener('onMqttConnected', (data) => {
+  const connSub = Mqtt.addListener('onMqttConnected', (data) => {
     console.log('Connected:', data.message);
   });
 
-  const disconnectedSub = Mqtt.addListener('onMqttDisconnected', (data) => {
+  const disconnSub = Mqtt.addListener('onMqttDisconnected', (data) => {
     console.log('Disconnected:', data.message);
   });
 
-  const messageSub = Mqtt.addListener('onMqttMessageReceived', (data) => {
-    console.log(`Message on [${data.topic}]:`, data.message);
+  const msgSub = Mqtt.addListener('onMqttMessageReceived', (data: MqttMessage) => {
+    console.log(`[${data.topic}]: ${data.message}`);
   });
 
-  const errorSub = Mqtt.addListener('onMqttError', (data) => {
-    console.error('MQTT Error:', data.error);
+  const errSub = Mqtt.addListener('onMqttError', (data) => {
+    console.error('Error:', data.error);
   });
 
-  const subscribedSub = Mqtt.addListener('onMqttSubscribed', (data) => {
+  const subSub = Mqtt.addListener('onMqttSubscribed', (data) => {
     console.log('Subscribed to:', data.topic);
   });
 
-  const unsubscribedSub = Mqtt.addListener('onMqttUnsubscribed', (data) => {
+  const unsubSub = Mqtt.addListener('onMqttUnsubscribed', (data) => {
     console.log('Unsubscribed from:', data.topic);
   });
 
   return () => {
-    connectedSub.remove();
-    disconnectedSub.remove();
-    messageSub.remove();
-    errorSub.remove();
-    subscribedSub.remove();
-    unsubscribedSub.remove();
+    connSub.remove();
+    disconnSub.remove();
+    msgSub.remove();
+    errSub.remove();
+    subSub.remove();
+    unsubSub.remove();
   };
 }, []);
 ```
@@ -160,95 +184,220 @@ useEffect(() => {
 
 ### `Mqtt.connect(brokerUrl, username, password)`
 
-| Parameter   | Type     | Description                                |
-| ----------- | -------- | ------------------------------------------ |
-| `brokerUrl` | `string` | Broker URL (e.g. `tcp://host:1883`)        |
-| `username`  | `string` | Username for authentication (empty string for anonymous) |
-| `password`  | `string` | Password for authentication (empty string for anonymous) |
+Connects to an MQTT broker.
 
-**Returns:** `Promise<string>`
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `brokerUrl` | `string` | Broker URL (e.g. `tcp://broker.hivemq.com:1883`) |
+| `username` | `string` | Username for authentication (empty string for anonymous) |
+| `password` | `string` | Password for authentication (empty string for anonymous) |
+
+**Returns:** `Promise<string>` — resolves with a success message, rejects on failure.
+
+---
 
 ### `Mqtt.disconnect()`
 
+Disconnects from the currently connected broker.
+
 **Returns:** `Promise<string>`
+
+---
 
 ### `Mqtt.subscribe(topic, qos?)`
 
-| Parameter | Type     | Description                 |
-| --------- | -------- | --------------------------- |
-| `topic`   | `string` | The MQTT topic to subscribe |
-| `qos`     | `number` | QoS level (0, 1, 2). Default: `1` |
+Subscribes to an MQTT topic.
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `topic` | `string` | The MQTT topic to subscribe to |
+| `qos` | `number` | QoS level: `0`, `1`, or `2`. Default: `1` |
 
 **Returns:** `Promise<string>`
+
+---
 
 ### `Mqtt.unsubscribe(topic)`
 
-| Parameter | Type     | Description                   |
-| --------- | -------- | ----------------------------- |
-| `topic`   | `string` | The MQTT topic to unsubscribe |
+Unsubscribes from an MQTT topic.
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `topic` | `string` | The MQTT topic to unsubscribe from |
 
 **Returns:** `Promise<string>`
+
+---
 
 ### `Mqtt.publish(topic, message, qos?)`
 
-| Parameter | Type     | Description                 |
-| --------- | -------- | --------------------------- |
-| `topic`   | `string` | The MQTT topic to publish to |
-| `message` | `string` | The message payload          |
-| `qos`     | `number` | QoS level (0, 1, 2). Default: `1` |
+Publishes a message to an MQTT topic.
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `topic` | `string` | The MQTT topic to publish to |
+| `message` | `string` | The message payload |
+| `qos` | `number` | QoS level: `0`, `1`, or `2`. Default: `1` |
 
 **Returns:** `Promise<string>`
 
+---
+
 ### `Mqtt.addListener(eventName, callback)`
 
-| Event Name              | Payload                             |
-| ----------------------- | ----------------------------------- |
-| `onMqttConnected`       | `{ message: string }`               |
-| `onMqttDisconnected`    | `{ message: string }`               |
-| `onMqttMessageReceived` | `{ topic: string, message: string }`|
-| `onMqttError`           | `{ error: string }`                 |
-| `onMqttSubscribed`      | `{ topic: string }`                 |
-| `onMqttUnsubscribed`    | `{ topic: string }`                 |
+Registers a listener for MQTT events. Returns an `EmitterSubscription` — call `.remove()` to unregister.
 
-**Returns:** `EmitterSubscription` — call `.remove()` to unsubscribe.
+| Event Name | Callback Payload | Description |
+| --- | --- | --- |
+| `onMqttConnected` | `{ message: string }` | Fired when connected to the broker |
+| `onMqttDisconnected` | `{ message: string }` | Fired when disconnected |
+| `onMqttMessageReceived` | `{ topic: string, message: string }` | Fired when a message is received |
+| `onMqttError` | `{ error: string }` | Fired on connection or protocol error |
+| `onMqttSubscribed` | `{ topic: string }` | Fired after successful subscribe |
+| `onMqttUnsubscribed` | `{ topic: string }` | Fired after successful unsubscribe |
+
+**Returns:** `EmitterSubscription`
+
+## Types
+
+```ts
+// Available event names
+type MqttEvent =
+  | 'onMqttConnected'
+  | 'onMqttDisconnected'
+  | 'onMqttMessageReceived'
+  | 'onMqttError'
+  | 'onMqttSubscribed'
+  | 'onMqttUnsubscribed';
+
+// Payload shape for onMqttMessageReceived
+interface MqttMessage {
+  topic: string;
+  message: string;
+}
+```
 
 ## Full Example
 
+A complete React Native screen with connect/disconnect, subscribe/unsubscribe, publish, and a real-time log viewer:
+
 ```tsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Button } from 'react-native';
-import { Mqtt } from 'react-native-mqtt-client';
+import { useState, useEffect, useCallback } from 'react';
+import { Text, View, Button, Alert, SafeAreaView, ScrollView } from 'react-native';
+import { Mqtt, type MqttMessage } from 'react-native-mqtt-client';
 
-export default function App() {
-  const [messages, setMessages] = useState<string[]>([]);
+export default function MqttDemo() {
+  const [isConnected, setIsConnected] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
 
-  useEffect(() => {
-    const sub = Mqtt.addListener('onMqttMessageReceived', (data) => {
-      setMessages((prev) => [...prev, `[${data.topic}]: ${data.message}`]);
-    });
-    return () => sub.remove();
+  const addLog = useCallback((log: string) => {
+    const ts = new Date().toLocaleTimeString();
+    setLogs((prev) => [`[${ts}] ${log}`, ...prev].slice(0, 50));
   }, []);
 
-  const start = async () => {
-    await Mqtt.connect('tcp://broker.hivemq.com:1883', '', '');
-    await Mqtt.subscribe('test/topic');
+  // Register all MQTT event listeners
+  useEffect(() => {
+    const subs = [
+      Mqtt.addListener('onMqttConnected', (d) => {
+        addLog(`✅ Connected: ${d.message}`);
+        setIsConnected(true);
+      }),
+      Mqtt.addListener('onMqttDisconnected', (d) => {
+        addLog(`🔌 Disconnected: ${d.message}`);
+        setIsConnected(false);
+      }),
+      Mqtt.addListener('onMqttMessageReceived', (d: MqttMessage) => {
+        addLog(`📩 [${d.topic}]: ${d.message}`);
+      }),
+      Mqtt.addListener('onMqttError', (d) => {
+        addLog(`❌ Error: ${d.error}`);
+      }),
+      Mqtt.addListener('onMqttSubscribed', (d) => {
+        addLog(`📌 Subscribed: ${d.topic}`);
+      }),
+      Mqtt.addListener('onMqttUnsubscribed', (d) => {
+        addLog(`📌 Unsubscribed: ${d.topic}`);
+      }),
+    ];
+    return () => subs.forEach((s) => s.remove());
+  }, [addLog]);
+
+  const handleConnect = async () => {
+    try {
+      await Mqtt.connect('tcp://broker.hivemq.com:1883', '', '');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message);
+    }
   };
 
-  const send = async () => {
-    await Mqtt.publish('test/topic', 'Hello MQTT!');
+  const handleSubscribe = async () => {
+    try {
+      await Mqtt.subscribe('test/react-native');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message);
+    }
+  };
+
+  const handlePublish = async () => {
+    try {
+      await Mqtt.publish('test/react-native', JSON.stringify({ hello: 'world' }));
+      addLog('📤 Published message');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message);
+    }
   };
 
   return (
-    <View style={{ flex: 1, padding: 20, justifyContent: 'center' }}>
-      <Button title="Connect & Subscribe" onPress={start} />
-      <Button title="Publish" onPress={send} />
-      {messages.map((msg, i) => (
-        <Text key={i}>{msg}</Text>
-      ))}
-    </View>
+    <SafeAreaView style={{ flex: 1, padding: 20 }}>
+      <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 12 }}>
+        MQTT Client — {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+      </Text>
+
+      <View style={{ gap: 8, marginBottom: 16 }}>
+        <Button title="Connect" onPress={handleConnect} disabled={isConnected} />
+        <Button title="Subscribe" onPress={handleSubscribe} disabled={!isConnected} />
+        <Button title="Publish" onPress={handlePublish} disabled={!isConnected} />
+        <Button title="Disconnect" onPress={() => Mqtt.disconnect()} disabled={!isConnected} />
+      </View>
+
+      <ScrollView style={{ backgroundColor: '#1e1e1e', borderRadius: 8, padding: 12, flex: 1 }}>
+        {logs.map((log, i) => (
+          <Text key={i} style={{ color: '#d4d4d4', fontFamily: 'monospace', fontSize: 12, marginBottom: 4 }}>
+            {log}
+          </Text>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 ```
+
+> 💡 See the [`example/`](./example) directory for a more feature-rich demo app with editable broker credentials, topic management, JSON/plain-text message format toggle, and scrollable logs.
+
+## Troubleshooting
+
+### iOS build fails with pod errors
+
+Make sure your minimum iOS deployment target is **13.0+** and run:
+
+```sh
+cd ios && pod install --repo-update
+```
+
+### Events not received on iOS (New Architecture)
+
+This library requires React Native **0.76+** with the New Architecture enabled. The iOS implementation uses TurboModule event emission which is only available under the new architecture runtime.
+
+### Connection timeout
+
+- Verify the broker URL, port, and credentials are correct.
+- Check that your device/emulator has network access to the broker.
+- For SSL/TLS connections, ensure the broker's certificate is valid.
+
+### `Mqtt.connect` rejects immediately
+
+- Ensure the broker URL includes the scheme (e.g. `tcp://`, `ssl://`).
+- Confirm the port number is correct for the chosen scheme.
 
 ## Contributing
 
