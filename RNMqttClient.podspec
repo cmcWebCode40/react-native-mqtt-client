@@ -18,5 +18,11 @@ Pod::Spec.new do |s|
 
   s.dependency "MQTTClient", "~> 0.15"
 
+  # Enable Clang modules for Objective-C++ so MQTTClient's `@import Foundation;` compiles
+  s.pod_target_xcconfig = {
+    "CLANG_ENABLE_MODULES" => "YES",
+    "CLANG_CXX_MODULES" => "YES"
+  }
+
   install_modules_dependencies(s)
 end
