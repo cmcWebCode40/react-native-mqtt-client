@@ -49,14 +49,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cmcWebCode40?/react-native-mqtt-client.git"
+    "url": "git+https://github.com/cmcWebCode40/react-native-mqtt-client.git"
   },
   "author": "cmcwebcode40 <infinity_michael7@yahoo.com> (https://github.com/cmcWebCode40?)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/cmcWebCode40?/react-native-mqtt-client/issues"
+    "url": "https://github.com/cmcWebCode40/react-native-mqtt-client/issues"
   },
-  "homepage": "https://github.com/cmcWebCode40?/react-native-mqtt-client#readme",
+  "homepage": "https://github.com/cmcWebCode40/react-native-mqtt-client#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
