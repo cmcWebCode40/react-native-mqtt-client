@@ -1,8 +1,8 @@
-import { NativeEventEmitter, NativeModules, Platform } from 'react-native';
+import { NativeEventEmitter, Platform } from 'react-native';
 import MqttClient from './NativeMqttClient';
 
 const MqttEventEmitter = new NativeEventEmitter(
-  Platform.OS !== 'web' ? NativeModules.MqttClient : undefined
+  Platform.OS !== 'web' ? (MqttClient as any) : undefined
 );
 
 export type MqttEvent =
