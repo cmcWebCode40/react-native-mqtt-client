@@ -9,7 +9,7 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import { Mqtt, type MqttMessage } from 'react-native-mqtt-client';
+import { Mqtt, type MqttMessage } from '@ecodevstack/react-native-mqtt-client';
 
 const DEFAULT_BROKER_URL = '';
 const DEFAULT_USERNAME = '';
