@@ -1,5 +1,5 @@
 {
-  "name": "react-native-mqtt-client",
+  "name": "@ecodevstack/react-native-mqtt-client",
   "version": "0.1.0",
   "description": "Mqtt client for react native mobile",
   "main": "./lib/module/index.js",
