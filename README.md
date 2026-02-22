@@ -9,7 +9,7 @@ A native MQTT client for React Native (Android & iOS) built with the **New Archi
 - 📥 **Subscribe / Unsubscribe** to topics
 - 📩 **Real-time events** — receive messages, connection status changes, and errors via listeners
 - ⚡ **New Architecture** — Turbo Module with Codegen (React Native 0.76+)
-- 📱 **Expo** compatible via config plugin
+- 📱 **Expo** compatible
 - 🤖 **Android** — Eclipse Paho MQTT
 - 🍎 **iOS** — MQTT-Client-Framework
 
@@ -33,17 +33,6 @@ yarn add @ecodevstack/react-native-mqtt-client
 cd ios && pod install
 ```
 
-### Expo
-
-Add the plugin to your `app.json` or `app.config.js`:
-
-```json
-{
-  "expo": {
-    "plugins": ["@ecodevstack/react-native-mqtt-client"]
-  }
-}
-```
 
 Then rebuild:
 
